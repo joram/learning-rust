@@ -17,12 +17,6 @@ fn word_counts(s: String) -> BTreeMap<String, isize> {
             }
         }
     }
-//
-//    for (key, value) in counts.iter() {
-//        if value > &50 {
-//            println!("{} {}", key, value);
-//        }
-//    }
     return counts;
 }
 
@@ -42,8 +36,13 @@ fn top_tfidf_words(tf: BTreeMap<String, isize>, df: BTreeMap<String, isize>, num
     let mut weights: Vec<f64> = tfidf.values().cloned().collect();
     weights.sort_by(|b, a| a.partial_cmp(b).unwrap());
 
+    let mut prev: f64 = 0.0;
     let mut best_words : Vec<String> = Vec::new();
     for w in weights {
+        if w == prev {
+            continue
+        }
+        prev = w;
         for (word, weight) in tfidf.iter(){
             if *weight == w {
                 best_words.push(word.to_string());
@@ -68,7 +67,10 @@ fn keywords(book: String, chapter: String, chapter_number: u32, min_document_use
 
 fn main() {
     let url = "http://www.gutenberg.org/files/11/11-0.txt";
-    let book = reqwest::get(url).expect("failed to make get request").text().expect("failed to get text").replace("\r\n", " ").to_lowercase();
+    let mut book = reqwest::get(url).expect("failed to make get request").text().expect("failed to get text").to_lowercase();
+    for bad_char in ["\r", "\n", ",", ".", "!", ":"].iter() {
+        book = book.replace(bad_char, " ")
+    }
     let chapters: Vec<&str> = book.split("chapter").collect();
 
     let mut i = 0;
